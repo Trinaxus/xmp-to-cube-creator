@@ -1,8 +1,15 @@
+import type { XMPColorSettings } from '@/lib/xmp-parser';
+
+export type LUTSize = '17' | '33' | '65';
+export type ColorSpace = 'rec709' | 'log_slog3' | 'log_vlog' | 'log_clog' | 'wide_gamut';
+export type PreviewGamma = 'srgb' | 'linear' | 'log';
+
 export interface XMPPreset {
   id: string;
   name: string;
   file: File;
   loaded: boolean;
+  settings?: XMPColorSettings;
 }
 
 export interface ReferenceImage {
@@ -13,10 +20,6 @@ export interface ReferenceImage {
   width: number;
   height: number;
 }
-
-export type LUTSize = '17' | '33' | '65';
-export type ColorSpace = 'rec709' | 'log_slog3' | 'log_vlog' | 'log_logc';
-export type PreviewGamma = 'linear' | 'srgb' | 'rec709';
 
 export interface LUTExportConfig {
   size: LUTSize;
@@ -49,19 +52,20 @@ export const EXPORT_VARIANTS: ExportVariant[] = [
     id: 'wide_gamut',
     name: 'Wide_Gamut',
     description: 'Extended gamut LUT with soft clipping',
-    colorSpace: 'log_logc',
+    colorSpace: 'wide_gamut',
   },
 ];
 
-export const LUT_SIZES: { value: LUTSize; label: string; points: number }[] = [
-  { value: '17', label: '17×17×17', points: 4913 },
-  { value: '33', label: '33×33×33', points: 35937 },
-  { value: '65', label: '65×65×65', points: 274625 },
+export const LUT_SIZES: { value: LUTSize; label: string }[] = [
+  { value: '17', label: '17×17×17' },
+  { value: '33', label: '33×33×33' },
+  { value: '65', label: '65×65×65' },
 ];
 
 export const COLOR_SPACES: { value: ColorSpace; label: string }[] = [
   { value: 'rec709', label: 'Rec.709' },
   { value: 'log_slog3', label: 'S-Log3' },
   { value: 'log_vlog', label: 'V-Log' },
-  { value: 'log_logc', label: 'ARRI LogC' },
+  { value: 'log_clog', label: 'Canon Log' },
+  { value: 'wide_gamut', label: 'Wide Gamut' },
 ];

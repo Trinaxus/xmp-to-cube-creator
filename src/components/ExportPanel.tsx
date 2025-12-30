@@ -80,9 +80,9 @@ export function ExportPanel({
       {/* Export stats */}
       <div className="grid grid-cols-2 gap-2 p-3 rounded bg-secondary/50">
         <div>
-          <p className="text-[10px] text-muted-foreground">Grid Points</p>
+          <p className="text-[10px] text-muted-foreground">LUT Size</p>
           <p className="text-sm font-mono text-foreground">
-            {lutSize?.points.toLocaleString() || '-'}
+            {lutSize?.label || '-'}
           </p>
         </div>
         <div>
