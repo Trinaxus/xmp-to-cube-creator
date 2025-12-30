@@ -19,7 +19,7 @@ interface ControlPanelProps {
 const PREVIEW_GAMMAS: { value: PreviewGamma; label: string }[] = [
   { value: 'linear', label: 'Linear' },
   { value: 'srgb', label: 'sRGB' },
-  { value: 'rec709', label: 'Rec.709' },
+  { value: 'log', label: 'Log' },
 ];
 
 export function ControlPanel({ config, onConfigChange }: ControlPanelProps) {
@@ -47,9 +47,6 @@ export function ControlPanel({ config, onConfigChange }: ControlPanelProps) {
               {LUT_SIZES.map((size) => (
                 <SelectItem key={size.value} value={size.value}>
                   <span className="font-mono text-sm">{size.label}</span>
-                  <span className="text-[10px] text-muted-foreground ml-2">
-                    ({size.points.toLocaleString()} pts)
-                  </span>
                 </SelectItem>
               ))}
             </SelectContent>

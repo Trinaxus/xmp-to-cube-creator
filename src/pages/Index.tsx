@@ -4,6 +4,7 @@ import { Header } from '@/components/Header';
 import { Sidebar } from '@/components/Sidebar';
 import { ImagePreview } from '@/components/ImagePreview';
 import { generateCubeFile, downloadCubeFile } from '@/lib/lut-generator';
+import { parseXMPFile } from '@/lib/xmp-parser';
 import type { XMPPreset, ReferenceImage, LUTExportConfig } from '@/types/lut';
 import { EXPORT_VARIANTS } from '@/types/lut';
 
@@ -28,38 +29,56 @@ export default function Index() {
   const [isExporting, setIsExporting] = useState(false);
 
   // Handle XMP file selection
-  const handleXMPFilesChange = useCallback((files: File[]) => {
+  const handleXMPFilesChange = useCallback(async (files: File[]) => {
     setXmpFiles((prev) => [...prev, ...files]);
     
-    // Set first file as active preset
+    // Set first file as active preset and parse it
     if (files.length > 0 && !activePreset) {
       const file = files[0];
-      setActivePreset({
-        id: crypto.randomUUID(),
-        name: file.name,
-        file,
-        loaded: true,
-      });
-      toast.success(`Loaded preset: ${file.name}`);
+      
+      try {
+        const settings = await parseXMPFile(file);
+        
+        setActivePreset({
+          id: crypto.randomUUID(),
+          name: file.name,
+          file,
+          loaded: true,
+          settings,
+        });
+        
+        toast.success(`Loaded preset: ${file.name}`, {
+          description: `Saturation: ${settings.saturation}, Vibrance: ${settings.vibrance}`,
+        });
+      } catch (error) {
+        console.error('Failed to parse XMP:', error);
+        toast.error(`Failed to parse: ${file.name}`);
+      }
     }
   }, [activePreset]);
 
-  const handleRemoveXMP = useCallback((index: number) => {
+  const handleRemoveXMP = useCallback(async (index: number) => {
     setXmpFiles((prev) => {
       const updated = prev.filter((_, i) => i !== index);
+      
       // Update active preset if removed
       if (activePreset && prev[index]?.name === activePreset.name) {
         if (updated.length > 0) {
-          setActivePreset({
-            id: crypto.randomUUID(),
-            name: updated[0].name,
-            file: updated[0],
-            loaded: true,
-          });
+          // Parse and set the next file
+          parseXMPFile(updated[0]).then((settings) => {
+            setActivePreset({
+              id: crypto.randomUUID(),
+              name: updated[0].name,
+              file: updated[0],
+              loaded: true,
+              settings,
+            });
+          }).catch(console.error);
         } else {
           setActivePreset(null);
         }
       }
+      
       return updated;
     });
   }, [activePreset]);
@@ -116,7 +135,8 @@ export default function Index() {
           config.size,
           variant.colorSpace,
           variant.name,
-          config.clamp
+          config.clamp,
+          activePreset.settings
         );
         
         const filename = `${activePreset.name.replace('.xmp', '')}_${config.size}x${config.size}x${config.size}_${variant.name}.cube`;
@@ -160,7 +180,7 @@ export default function Index() {
         <main className="flex-1 p-4 flex flex-col">
           <ImagePreview
             image={referenceImage}
-            hasPreset={!!activePreset}
+            preset={activePreset}
           />
         </main>
       </div>

@@ -1,4 +1,6 @@
 import type { LUTSize, ColorSpace } from '@/types/lut';
+import type { XMPColorSettings } from './xmp-parser';
+import { transformColor } from './color-transform';
 
 interface LUTPoint {
   r: number;
@@ -9,61 +11,79 @@ interface LUTPoint {
   outB: number;
 }
 
-// Simulated color transformation based on common XMP adjustments
-// In a real implementation, this would sample the actual Lightroom output
-function simulateColorTransform(
-  r: number,
-  g: number,
-  b: number,
-  colorSpace: ColorSpace
-): [number, number, number] {
-  // Apply a simulated "cinematic" look
-  // This is a placeholder - real implementation would use sampled data
-  
-  // Slight warm shift
-  let outR = r * 1.05;
-  let outG = g * 1.0;
-  let outB = b * 0.92;
-  
-  // Lift shadows slightly
-  const shadowLift = 0.02;
-  outR = outR + (1 - outR) * shadowLift * (1 - r);
-  outG = outG + (1 - outG) * shadowLift * (1 - g);
-  outB = outB + (1 - outB) * shadowLift * (1 - b);
-  
-  // Slight S-curve contrast
-  const contrast = (value: number) => {
-    return 0.5 + (value - 0.5) * 1.1;
-  };
-  
-  outR = contrast(outR);
-  outG = contrast(outG);
-  outB = contrast(outB);
-  
-  // Color space specific adjustments
-  if (colorSpace.startsWith('log_')) {
-    // Apply inverse log for log input
-    const logToLinear = (v: number) => Math.pow(10, (v - 0.385) * 5.26) * 0.18;
-    outR = logToLinear(outR);
-    outG = logToLinear(outG);
-    outB = logToLinear(outB);
+// Default settings when no XMP is provided
+const defaultSettings: XMPColorSettings = {
+  exposure: 0,
+  contrast: 0,
+  highlights: 0,
+  shadows: 0,
+  whites: 0,
+  blacks: 0,
+  clarity: 0,
+  dehaze: 0,
+  texture: 0,
+  vibrance: 0,
+  saturation: 0,
+  temperature: 0,
+  tint: 0,
+  hsl: {
+    hue: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
+    saturation: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
+    luminance: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
+  },
+  splitToning: {
+    shadowHue: 0,
+    shadowSaturation: 0,
+    highlightHue: 0,
+    highlightSaturation: 0,
+    balance: 0,
+  },
+  toneCurve: {
+    points: [[0, 0], [255, 255]],
+    red: [[0, 0], [255, 255]],
+    green: [[0, 0], [255, 255]],
+    blue: [[0, 0], [255, 255]],
+  },
+};
+
+// Apply log encoding for log-based color spaces
+function applyLogEncoding(value: number, colorSpace: ColorSpace): number {
+  if (colorSpace === 'log_slog3') {
+    // Sony S-Log3 encoding
+    if (value >= 0.01125) {
+      return (420 + Math.log10((value + 0.01) / 0.19) * 261.5) / 1023;
+    }
+    return (value * 171.2102946929 + 95) / 1023;
   }
   
-  // Clamp to valid range
-  outR = Math.max(0, Math.min(1, outR));
-  outG = Math.max(0, Math.min(1, outG));
-  outB = Math.max(0, Math.min(1, outB));
+  if (colorSpace === 'log_vlog') {
+    // Panasonic V-Log encoding
+    if (value >= 0.01) {
+      return 0.241514 + 0.598206 * Math.log10(value + 0.00873);
+    }
+    return 5.6 * value + 0.125;
+  }
   
-  return [outR, outG, outB];
+  if (colorSpace === 'log_clog') {
+    // Canon Log encoding
+    if (value >= 0) {
+      return 0.529136 + 0.169 * Math.log10(value + 0.0730597);
+    }
+    return value;
+  }
+  
+  return value;
 }
 
 export function generateLUTData(
   size: LUTSize,
   colorSpace: ColorSpace,
-  clamp: boolean
+  clamp: boolean,
+  settings?: XMPColorSettings
 ): LUTPoint[] {
   const sizeNum = parseInt(size);
   const points: LUTPoint[] = [];
+  const xmpSettings = settings || defaultSettings;
   
   for (let b = 0; b < sizeNum; b++) {
     for (let g = 0; g < sizeNum; g++) {
@@ -72,7 +92,15 @@ export function generateLUTData(
         const inG = g / (sizeNum - 1);
         const inB = b / (sizeNum - 1);
         
-        let [outR, outG, outB] = simulateColorTransform(inR, inG, inB, colorSpace);
+        // Apply color transformation based on XMP settings
+        let [outR, outG, outB] = transformColor(inR, inG, inB, xmpSettings);
+        
+        // Apply log encoding if needed
+        if (colorSpace.startsWith('log_')) {
+          outR = applyLogEncoding(outR, colorSpace);
+          outG = applyLogEncoding(outG, colorSpace);
+          outB = applyLogEncoding(outB, colorSpace);
+        }
         
         if (clamp) {
           outR = Math.max(0, Math.min(1, outR));
@@ -100,10 +128,11 @@ export function generateCubeFile(
   size: LUTSize,
   colorSpace: ColorSpace,
   variantName: string,
-  clamp: boolean
+  clamp: boolean,
+  settings?: XMPColorSettings
 ): string {
   const sizeNum = parseInt(size);
-  const points = generateLUTData(size, colorSpace, clamp);
+  const points = generateLUTData(size, colorSpace, clamp, settings);
   
   let content = '';
   

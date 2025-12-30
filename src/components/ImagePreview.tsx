@@ -1,17 +1,110 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Eye, EyeOff, SplitSquareHorizontal, Maximize2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-import type { ReferenceImage } from '@/types/lut';
+import type { ReferenceImage, XMPPreset } from '@/types/lut';
+import { transformColor } from '@/lib/color-transform';
 
 interface ImagePreviewProps {
   image: ReferenceImage | null;
-  hasPreset: boolean;
+  preset: XMPPreset | null;
 }
 
-export function ImagePreview({ image, hasPreset }: ImagePreviewProps) {
+export function ImagePreview({ image, preset }: ImagePreviewProps) {
   const [viewMode, setViewMode] = useState<'after' | 'before' | 'split'>('after');
   const [splitPosition, setSplitPosition] = useState(50);
+  const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+
+  const hasPreset = !!preset?.settings;
+
+  // Process the image when preset or image changes
+  useEffect(() => {
+    if (!image || !preset?.settings) {
+      setProcessedImageUrl(null);
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    const processImage = async () => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          setIsProcessing(false);
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Apply color transformation to each pixel
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i] / 255;
+          const g = data[i + 1] / 255;
+          const b = data[i + 2] / 255;
+          
+          const [outR, outG, outB] = transformColor(r, g, b, preset.settings!);
+          
+          data[i] = Math.round(outR * 255);
+          data[i + 1] = Math.round(outG * 255);
+          data[i + 2] = Math.round(outB * 255);
+          // Alpha stays the same
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        setProcessedImageUrl(canvas.toDataURL('image/png'));
+        setIsProcessing(false);
+      };
+      
+      img.onerror = () => {
+        setIsProcessing(false);
+      };
+      
+      img.src = image.dataUrl;
+    };
+    
+    processImage();
+  }, [image, preset?.settings]);
+
+  // Handle split drag
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = (x / rect.width) * 100;
+      setSplitPosition(Math.max(5, Math.min(95, percentage)));
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   if (!image) {
     return (
@@ -30,6 +123,8 @@ export function ImagePreview({ image, hasPreset }: ImagePreviewProps) {
       </div>
     );
   }
+
+  const afterImageSrc = processedImageUrl || image.dataUrl;
 
   return (
     <div className="flex-1 flex flex-col bg-surface-sunken rounded-lg border border-border overflow-hidden">
@@ -66,6 +161,11 @@ export function ImagePreview({ image, hasPreset }: ImagePreviewProps) {
         </div>
         
         <div className="flex items-center gap-2">
+          {isProcessing && (
+            <span className="text-[10px] font-mono text-warning animate-pulse">
+              Processing...
+            </span>
+          )}
           <span className="text-[10px] font-mono text-muted-foreground">
             {image.width}×{image.height}
           </span>
@@ -77,79 +177,56 @@ export function ImagePreview({ image, hasPreset }: ImagePreviewProps) {
 
       {/* Image container */}
       <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4">
-        <div className="relative max-w-full max-h-full">
+        <div className="relative max-w-full max-h-full" ref={containerRef}>
           {viewMode === 'split' ? (
-            <div className="relative">
-              {/* Before image (full) */}
+            <div className="relative select-none">
+              {/* Before image (full width, underneath) */}
               <img
                 src={image.dataUrl}
                 alt="Before"
                 className="max-w-full max-h-[60vh] object-contain"
+                draggable={false}
               />
               
-              {/* After image (clipped) */}
+              {/* After image (clipped from left) */}
               <div
-                className="absolute inset-0 overflow-hidden"
-                style={{ width: `${splitPosition}%` }}
+                className="absolute inset-0 overflow-hidden pointer-events-none"
+                style={{ 
+                  clipPath: `inset(0 ${100 - splitPosition}% 0 0)` 
+                }}
               >
                 <img
-                  src={image.dataUrl}
+                  src={afterImageSrc}
                   alt="After"
-                  className={cn(
-                    "max-w-full max-h-[60vh] object-contain",
-                    hasPreset && "brightness-110 contrast-105 saturate-110"
-                  )}
-                  style={{ width: `${100 / (splitPosition / 100)}%` }}
+                  className="max-w-full max-h-[60vh] object-contain"
+                  draggable={false}
                 />
               </div>
               
               {/* Split line */}
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-primary cursor-ew-resize"
-                style={{ left: `${splitPosition}%` }}
-                onMouseDown={(e) => {
-                  const startX = e.clientX;
-                  const startPos = splitPosition;
-                  const rect = (e.target as HTMLElement).parentElement?.getBoundingClientRect();
-                  
-                  const handleMouseMove = (moveEvent: MouseEvent) => {
-                    if (rect) {
-                      const delta = moveEvent.clientX - startX;
-                      const newPos = startPos + (delta / rect.width) * 100;
-                      setSplitPosition(Math.max(5, Math.min(95, newPos)));
-                    }
-                  };
-                  
-                  const handleMouseUp = () => {
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
-                  };
-                  
-                  document.addEventListener('mousemove', handleMouseMove);
-                  document.addEventListener('mouseup', handleMouseUp);
-                }}
+                className="absolute top-0 bottom-0 w-1 bg-primary cursor-ew-resize z-10"
+                style={{ left: `calc(${splitPosition}% - 2px)` }}
+                onMouseDown={handleMouseDown}
               >
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                  <SplitSquareHorizontal className="w-3 h-3 text-primary-foreground" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                  <SplitSquareHorizontal className="w-4 h-4 text-primary-foreground" />
                 </div>
               </div>
               
               {/* Labels */}
-              <div className="absolute top-2 left-2 px-2 py-0.5 bg-background/80 rounded text-[10px] font-mono">
+              <div className="absolute top-2 left-2 px-2 py-0.5 bg-background/80 rounded text-[10px] font-mono pointer-events-none">
                 AFTER
               </div>
-              <div className="absolute top-2 right-2 px-2 py-0.5 bg-background/80 rounded text-[10px] font-mono">
+              <div className="absolute top-2 right-2 px-2 py-0.5 bg-background/80 rounded text-[10px] font-mono pointer-events-none">
                 BEFORE
               </div>
             </div>
           ) : (
             <img
-              src={image.dataUrl}
+              src={viewMode === 'before' ? image.dataUrl : afterImageSrc}
               alt={viewMode === 'before' ? 'Before' : 'After'}
-              className={cn(
-                "max-w-full max-h-[60vh] object-contain transition-all duration-300",
-                viewMode === 'after' && hasPreset && "brightness-110 contrast-105 saturate-110"
-              )}
+              className="max-w-full max-h-[60vh] object-contain transition-all duration-300"
             />
           )}
         </div>
@@ -170,7 +247,7 @@ export function ImagePreview({ image, hasPreset }: ImagePreviewProps) {
         <span className="text-[10px] font-mono text-muted-foreground truncate">
           {image.name}
         </span>
-        {hasPreset && (
+        {hasPreset && !isProcessing && (
           <span className="text-[10px] font-mono text-success">
             ● LUT Preview Active
           </span>
