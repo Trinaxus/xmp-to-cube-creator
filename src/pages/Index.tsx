@@ -3,10 +3,48 @@ import { toast } from 'sonner';
 import { Header } from '@/components/Header';
 import { Sidebar } from '@/components/Sidebar';
 import { ImagePreview } from '@/components/ImagePreview';
+import { AdjustmentsPanel } from '@/components/adjustments';
 import { generateCubeFile, downloadCubeFile } from '@/lib/lut-generator';
-import { parseXMPFile } from '@/lib/xmp-parser';
+import { parseXMPFile, XMPColorSettings } from '@/lib/xmp-parser';
 import type { XMPPreset, ReferenceImage, LUTExportConfig } from '@/types/lut';
 import { EXPORT_VARIANTS } from '@/types/lut';
+
+// Default settings when no XMP is loaded
+const defaultSettings: XMPColorSettings = {
+  exposure: 0,
+  contrast: 0,
+  highlights: 0,
+  shadows: 0,
+  whites: 0,
+  blacks: 0,
+  clarity: 0,
+  dehaze: 0,
+  texture: 0,
+  vibrance: 0,
+  saturation: 0,
+  convertToGrayscale: false,
+  grayMixer: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
+  temperature: 0,
+  tint: 0,
+  hsl: {
+    hue: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
+    saturation: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
+    luminance: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
+  },
+  splitToning: {
+    shadowHue: 0,
+    shadowSaturation: 0,
+    highlightHue: 0,
+    highlightSaturation: 0,
+    balance: 0,
+  },
+  toneCurve: {
+    points: [[0, 0], [255, 255]],
+    red: [[0, 0], [255, 255]],
+    green: [[0, 0], [255, 255]],
+    blue: [[0, 0], [255, 255]],
+  },
+};
 
 export default function Index() {
   // XMP files
@@ -27,6 +65,16 @@ export default function Index() {
   // Export state
   const [selectedVariants, setSelectedVariants] = useState<string[]>(['rec709_clean']);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Handle settings change from the adjustments panel
+  const handleSettingsChange = useCallback((newSettings: XMPColorSettings) => {
+    if (activePreset) {
+      setActivePreset({
+        ...activePreset,
+        settings: newSettings,
+      });
+    }
+  }, [activePreset]);
 
   // Handle XMP file selection
   const handleXMPFilesChange = useCallback(async (files: File[]) => {
@@ -161,6 +209,7 @@ export default function Index() {
       <Header />
       
       <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - File Upload & Export */}
         <Sidebar
           xmpFiles={xmpFiles}
           onXMPFilesChange={handleXMPFilesChange}
@@ -177,12 +226,20 @@ export default function Index() {
           isExporting={isExporting}
         />
         
-        <main className="flex-1 p-4 flex flex-col">
+        {/* Main Preview Area */}
+        <main className="flex-1 p-4 flex flex-col min-w-0">
           <ImagePreview
             image={referenceImage}
             preset={activePreset}
           />
         </main>
+
+        {/* Right Panel - Adjustments */}
+        <AdjustmentsPanel
+          settings={activePreset?.settings ?? null}
+          onChange={handleSettingsChange}
+          presetName={activePreset?.name}
+        />
       </div>
     </div>
   );
