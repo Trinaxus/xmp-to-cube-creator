@@ -14,6 +14,19 @@ export interface XMPColorSettings {
   vibrance: number;
   saturation: number;
   
+  // Grayscale conversion
+  convertToGrayscale: boolean;
+  grayMixer: {
+    red: number;
+    orange: number;
+    yellow: number;
+    green: number;
+    aqua: number;
+    blue: number;
+    purple: number;
+    magenta: number;
+  };
+  
   // HSL Adjustments
   hsl: {
     hue: {
@@ -119,6 +132,19 @@ export function parseXMPContent(content: string): XMPColorSettings {
     texture: parseNumber(getAttr('Texture')),
     vibrance: parseNumber(getAttr('Vibrance')),
     saturation: parseNumber(getAttr('Saturation')),
+    
+    // Grayscale conversion
+    convertToGrayscale: getAttr('ConvertToGrayscale')?.toLowerCase() === 'true',
+    grayMixer: {
+      red: parseNumber(getAttr('GrayMixerRed')),
+      orange: parseNumber(getAttr('GrayMixerOrange')),
+      yellow: parseNumber(getAttr('GrayMixerYellow')),
+      green: parseNumber(getAttr('GrayMixerGreen')),
+      aqua: parseNumber(getAttr('GrayMixerAqua')),
+      blue: parseNumber(getAttr('GrayMixerBlue')),
+      purple: parseNumber(getAttr('GrayMixerPurple')),
+      magenta: parseNumber(getAttr('GrayMixerMagenta')),
+    },
     
     // Temperature/Tint
     temperature: parseNumber(getAttr('IncrementalTemperature')),
