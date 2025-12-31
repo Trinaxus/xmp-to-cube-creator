@@ -26,6 +26,8 @@ const defaultSettings: XMPColorSettings = {
   saturation: 0,
   temperature: 0,
   tint: 0,
+  convertToGrayscale: false,
+  grayMixer: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
   hsl: {
     hue: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },
     saturation: { red: 0, orange: 0, yellow: 0, green: 0, aqua: 0, blue: 0, purple: 0, magenta: 0 },

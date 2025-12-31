@@ -120,6 +120,32 @@ function applyToneCurve(value: number, curve: [number, number][]): number {
   return curve[curve.length - 1][1] / 255;
 }
 
+// Convert to grayscale with GrayMixer weights
+function convertToGrayscale(
+  r: number, g: number, b: number,
+  grayMixer: XMPColorSettings['grayMixer']
+): number {
+  // Get the hue to determine which mixer channels apply
+  const [h, s, l] = rgbToHsl(r, g, b);
+  const weights = getHueChannelWeights(h);
+  
+  // Base luminance (Rec.709)
+  const baseLuminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  
+  // Apply gray mixer adjustments based on original hue
+  let mixerAdjustment = 0;
+  for (const [channel, weight] of Object.entries(weights)) {
+    if (weight > 0) {
+      const channelKey = channel as keyof typeof grayMixer;
+      // GrayMixer values range from -100 to +100
+      mixerAdjustment += (grayMixer[channelKey] / 100) * weight * s;
+    }
+  }
+  
+  // Combine base luminance with mixer adjustment
+  return Math.max(0, Math.min(1, baseLuminance + mixerAdjustment * 0.5));
+}
+
 // Main color transformation function
 export function transformColor(
   r: number,
@@ -180,7 +206,13 @@ export function transformColor(
     outB = applyToneCurve(outB, settings.toneCurve.blue);
   }
   
-  // 6. Convert to HSL for HSL adjustments
+  // 6. Check for grayscale conversion BEFORE color adjustments
+  if (settings.convertToGrayscale) {
+    const gray = convertToGrayscale(outR, outG, outB, settings.grayMixer);
+    return [gray, gray, gray];
+  }
+  
+  // 7. Convert to HSL for HSL adjustments
   let [h, s, l] = rgbToHsl(
     Math.max(0, Math.min(1, outR)),
     Math.max(0, Math.min(1, outG)),
