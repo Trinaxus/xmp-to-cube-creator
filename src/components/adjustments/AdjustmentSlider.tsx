@@ -1,5 +1,6 @@
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useEffect } from 'react';
 
 interface AdjustmentSliderProps {
@@ -10,6 +11,7 @@ interface AdjustmentSliderProps {
   max?: number;
   step?: number;
   showValue?: boolean;
+  defaultValue?: number;
 }
 
 export function AdjustmentSlider({
@@ -20,8 +22,12 @@ export function AdjustmentSlider({
   max = 100,
   step = 1,
   showValue = true,
+  defaultValue,
 }: AdjustmentSliderProps) {
   const [inputValue, setInputValue] = useState(String(value));
+
+  // Calculate the neutral/default value
+  const neutralValue = defaultValue !== undefined ? defaultValue : (min < 0 && max > 0 ? 0 : min);
 
   useEffect(() => {
     setInputValue(String(Math.round(value)));
@@ -46,15 +52,35 @@ export function AdjustmentSlider({
     }
   };
 
+  const handleLabelDoubleClick = () => {
+    onChange(neutralValue);
+  };
+
   // Calculate fill percentage for visual feedback
   const center = (0 - min) / (max - min) * 100;
-  const current = ((value - min) / (max - min)) * 100;
-  const isPositive = value >= 0;
+
+  const isModified = value !== neutralValue;
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span 
+              className={`text-xs cursor-pointer select-none transition-colors ${
+                isModified 
+                  ? 'text-foreground font-medium' 
+                  : 'text-muted-foreground'
+              } hover:text-primary`}
+              onDoubleClick={handleLabelDoubleClick}
+            >
+              {label}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[10px]">
+            Doppelklick zum Zurücksetzen
+          </TooltipContent>
+        </Tooltip>
         {showValue && (
           <Input
             type="text"
