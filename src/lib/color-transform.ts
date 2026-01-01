@@ -187,6 +187,51 @@ export function transformColor(
   outG = 0.5 + (outG - 0.5) * contrastFactor;
   outB = 0.5 + (outB - 0.5) * contrastFactor;
   
+  // 5. Apply Clarity (midtone contrast enhancement)
+  // Clarity increases local contrast primarily in the midtones
+  if (settings.clarity !== 0) {
+    const midtoneLum = 0.2126 * outR + 0.7152 * outG + 0.0722 * outB;
+    // Midtone weight peaks at 0.5 luminance
+    const midtoneWeight = 1 - Math.abs(midtoneLum - 0.5) * 2;
+    const clarityAmount = (settings.clarity / 100) * 0.3 * midtoneWeight;
+    
+    // Apply as local contrast enhancement
+    const clarityFactor = 1 + clarityAmount;
+    outR = midtoneLum + (outR - midtoneLum) * clarityFactor;
+    outG = midtoneLum + (outG - midtoneLum) * clarityFactor;
+    outB = midtoneLum + (outB - midtoneLum) * clarityFactor;
+  }
+  
+  // 6. Apply Texture (fine detail enhancement - simplified as micro-contrast)
+  // Texture is similar to clarity but affects finer details
+  if (settings.texture !== 0) {
+    const textureLum = 0.2126 * outR + 0.7152 * outG + 0.0722 * outB;
+    // Texture has a broader tonal range than clarity
+    const textureAmount = (settings.texture / 100) * 0.15;
+    const textureFactor = 1 + textureAmount;
+    outR = textureLum + (outR - textureLum) * textureFactor;
+    outG = textureLum + (outG - textureLum) * textureFactor;
+    outB = textureLum + (outB - textureLum) * textureFactor;
+  }
+  
+  // 7. Apply Dehaze (haze removal / addition)
+  // Dehaze increases contrast and saturation, especially in low-contrast areas
+  if (settings.dehaze !== 0) {
+    const dehazeAmount = settings.dehaze / 100;
+    
+    // Increase contrast
+    const dehazeContrastFactor = 1 + dehazeAmount * 0.3;
+    outR = 0.5 + (outR - 0.5) * dehazeContrastFactor;
+    outG = 0.5 + (outG - 0.5) * dehazeContrastFactor;
+    outB = 0.5 + (outB - 0.5) * dehazeContrastFactor;
+    
+    // Darken slightly for positive dehaze (haze is usually bright)
+    const darkenAmount = dehazeAmount * 0.1;
+    outR = outR - darkenAmount;
+    outG = outG - darkenAmount;
+    outB = outB - darkenAmount;
+  }
+  
   // 5. Apply tone curve
   outR = applyToneCurve(Math.max(0, Math.min(1, outR)), settings.toneCurve.points);
   outG = applyToneCurve(Math.max(0, Math.min(1, outG)), settings.toneCurve.points);
