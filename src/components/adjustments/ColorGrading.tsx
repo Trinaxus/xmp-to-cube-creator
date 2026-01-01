@@ -48,6 +48,28 @@ export function ColorGrading({ settings, onChange }: ColorGradingProps) {
         />
       </div>
 
+      {/* Midtones */}
+      <div className="space-y-3 p-3 rounded-md bg-secondary/50">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-gradient-to-br from-gray-400 to-gray-500" />
+          <span className="text-xs font-medium">Mitten</span>
+        </div>
+        <AdjustmentSlider
+          label="Farbton"
+          value={settings.splitToning.midtoneHue}
+          onChange={(v) => updateSplitToning('midtoneHue', v)}
+          min={0}
+          max={360}
+        />
+        <AdjustmentSlider
+          label="Sättigung"
+          value={settings.splitToning.midtoneSaturation}
+          onChange={(v) => updateSplitToning('midtoneSaturation', v)}
+          min={0}
+          max={100}
+        />
+      </div>
+
       {/* Balance */}
       <div className="px-3">
         <AdjustmentSlider

@@ -36,9 +36,20 @@ const defaultSettings: XMPColorSettings = {
   splitToning: {
     shadowHue: 0,
     shadowSaturation: 0,
+    midtoneHue: 0,
+    midtoneSaturation: 0,
     highlightHue: 0,
     highlightSaturation: 0,
     balance: 0,
+  },
+  calibration: {
+    shadowTint: 0,
+    redHue: 0,
+    redSaturation: 0,
+    greenHue: 0,
+    greenSaturation: 0,
+    blueHue: 0,
+    blueSaturation: 0,
   },
   toneCurve: {
     points: [[0, 0], [255, 255]],

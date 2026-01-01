@@ -1,5 +1,8 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import type { XMPColorSettings } from '@/lib/xmp-parser';
 
 interface ToneCurveProps {
@@ -19,6 +22,7 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [localPoints, setLocalPoints] = useState(points);
+  const [showPointEditor, setShowPointEditor] = useState(false);
 
   useEffect(() => {
     setLocalPoints(points);
@@ -199,18 +203,101 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
     }
   };
 
+  const updatePointValue = (index: number, axis: 'x' | 'y', value: number) => {
+    const newPoints = [...localPoints];
+    const clampedValue = Math.max(0, Math.min(255, value));
+    if (axis === 'x') {
+      newPoints[index] = [clampedValue, newPoints[index][1]];
+    } else {
+      newPoints[index] = [newPoints[index][0], clampedValue];
+    }
+    setLocalPoints(newPoints);
+    onChange(newPoints);
+  };
+
+  const resetCurve = () => {
+    const defaultPoints: [number, number][] = [[0, 0], [255, 255]];
+    setLocalPoints(defaultPoints);
+    onChange(defaultPoints);
+  };
+
+  const sortedPointsForEditor = [...localPoints].sort((a, b) => a[0] - b[0]);
+
   return (
-    <canvas
-      ref={canvasRef}
-      width={200}
-      height={200}
-      className="w-full aspect-square bg-surface-sunken rounded-md cursor-crosshair"
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onDoubleClick={handleDoubleClick}
-    />
+    <div className="space-y-2">
+      <canvas
+        ref={canvasRef}
+        width={200}
+        height={200}
+        className="w-full aspect-square bg-surface-sunken rounded-md cursor-crosshair"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onDoubleClick={handleDoubleClick}
+      />
+      
+      {/* Controls */}
+      <div className="flex items-center justify-between gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowPointEditor(!showPointEditor)}
+          className="text-[10px] h-6 px-2"
+        >
+          {showPointEditor ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
+          Punkte bearbeiten
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={resetCurve}
+          className="text-[10px] h-6 px-2"
+        >
+          <RotateCcw className="w-3 h-3 mr-1" />
+          Zurücksetzen
+        </Button>
+      </div>
+
+      {/* Point Editor */}
+      {showPointEditor && (
+        <div className="space-y-2 p-2 rounded-md bg-secondary/50">
+          <div className="grid grid-cols-3 gap-2 text-[10px] text-muted-foreground font-medium">
+            <span>Punkt</span>
+            <span className="text-center">Eingang (X)</span>
+            <span className="text-center">Ausgang (Y)</span>
+          </div>
+          {sortedPointsForEditor.map((point, sortedIndex) => {
+            const originalIndex = localPoints.findIndex(
+              p => p[0] === point[0] && p[1] === point[1]
+            );
+            return (
+              <div key={sortedIndex} className="grid grid-cols-3 gap-2 items-center">
+                <span className="text-[10px] text-muted-foreground">
+                  {sortedIndex === 0 ? 'Start' : sortedIndex === sortedPointsForEditor.length - 1 ? 'Ende' : `P${sortedIndex}`}
+                </span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={255}
+                  value={point[0]}
+                  onChange={(e) => updatePointValue(originalIndex, 'x', parseInt(e.target.value) || 0)}
+                  className="h-6 text-[10px] text-center px-1"
+                />
+                <Input
+                  type="number"
+                  min={0}
+                  max={255}
+                  value={point[1]}
+                  onChange={(e) => updatePointValue(originalIndex, 'y', parseInt(e.target.value) || 0)}
+                  className="h-6 text-[10px] text-center px-1"
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -61,10 +61,12 @@ export interface XMPColorSettings {
     };
   };
   
-  // Split Toning
+  // Color Grading / Split Toning (with Midtones)
   splitToning: {
     shadowHue: number;
     shadowSaturation: number;
+    midtoneHue: number;
+    midtoneSaturation: number;
     highlightHue: number;
     highlightSaturation: number;
     balance: number;
@@ -81,6 +83,17 @@ export interface XMPColorSettings {
   // Temperature/Tint
   temperature: number;
   tint: number;
+  
+  // Camera Calibration
+  calibration: {
+    shadowTint: number;
+    redHue: number;
+    redSaturation: number;
+    greenHue: number;
+    greenSaturation: number;
+    blueHue: number;
+    blueSaturation: number;
+  };
 }
 
 function parseNumber(value: string | null): number {
@@ -184,13 +197,15 @@ export function parseXMPContent(content: string): XMPColorSettings {
       },
     },
     
-    // Split Toning
+    // Split Toning / Color Grading (with Midtones)
     splitToning: {
-      shadowHue: parseNumber(getAttr('SplitToningShadowHue')),
-      shadowSaturation: parseNumber(getAttr('SplitToningShadowSaturation')),
-      highlightHue: parseNumber(getAttr('SplitToningHighlightHue')),
-      highlightSaturation: parseNumber(getAttr('SplitToningHighlightSaturation')),
-      balance: parseNumber(getAttr('SplitToningBalance')),
+      shadowHue: parseNumber(getAttr('SplitToningShadowHue') || getAttr('ColorGradeShadowHue')),
+      shadowSaturation: parseNumber(getAttr('SplitToningShadowSaturation') || getAttr('ColorGradeShadowSat')),
+      midtoneHue: parseNumber(getAttr('ColorGradeMidtoneHue')),
+      midtoneSaturation: parseNumber(getAttr('ColorGradeMidtoneSat')),
+      highlightHue: parseNumber(getAttr('SplitToningHighlightHue') || getAttr('ColorGradeHighlightHue')),
+      highlightSaturation: parseNumber(getAttr('SplitToningHighlightSaturation') || getAttr('ColorGradeHighlightSat')),
+      balance: parseNumber(getAttr('SplitToningBalance') || getAttr('ColorGradeBlending')),
     },
     
     // Tone Curves
@@ -199,6 +214,17 @@ export function parseXMPContent(content: string): XMPColorSettings {
       red: parseToneCurve(xmlDoc, 'crs\\:ToneCurvePV2012Red, ToneCurvePV2012Red'),
       green: parseToneCurve(xmlDoc, 'crs\\:ToneCurvePV2012Green, ToneCurvePV2012Green'),
       blue: parseToneCurve(xmlDoc, 'crs\\:ToneCurvePV2012Blue, ToneCurvePV2012Blue'),
+    },
+    
+    // Camera Calibration
+    calibration: {
+      shadowTint: parseNumber(getAttr('ShadowTint')),
+      redHue: parseNumber(getAttr('CameraProfileRedPrimaryHue') || getAttr('RedHue')),
+      redSaturation: parseNumber(getAttr('CameraProfileRedPrimarySaturation') || getAttr('RedSaturation')),
+      greenHue: parseNumber(getAttr('CameraProfileGreenPrimaryHue') || getAttr('GreenHue')),
+      greenSaturation: parseNumber(getAttr('CameraProfileGreenPrimarySaturation') || getAttr('GreenSaturation')),
+      blueHue: parseNumber(getAttr('CameraProfileBluePrimaryHue') || getAttr('BlueHue')),
+      blueSaturation: parseNumber(getAttr('CameraProfileBluePrimarySaturation') || getAttr('BlueSaturation')),
     },
   };
 }

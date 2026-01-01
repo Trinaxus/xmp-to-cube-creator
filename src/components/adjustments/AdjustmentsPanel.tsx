@@ -2,10 +2,11 @@ import { Sliders } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BasicAdjustments } from './BasicAdjustments';
+import { ToneCurve } from './ToneCurve';
 import { HSLAdjustments } from './HSLAdjustments';
 import { ColorGrading } from './ColorGrading';
-import { ToneCurve } from './ToneCurve';
 import { GrayMixer } from './GrayMixer';
+import { Calibration } from './Calibration';
 import type { XMPColorSettings } from '@/lib/xmp-parser';
 
 interface AdjustmentsPanelProps {
@@ -33,6 +34,7 @@ export function AdjustmentsPanel({ settings, onChange, presetName }: Adjustments
     );
   }
 
+  // Lightroom order: Basic, Tone Curve, HSL/Color, Color Grading, B&W Mixer, Calibration
   return (
     <aside className="w-80 border-l border-border bg-sidebar flex flex-col h-full">
       {/* Header */}
@@ -48,21 +50,21 @@ export function AdjustmentsPanel({ settings, onChange, presetName }: Adjustments
         )}
       </div>
 
-      {/* Content */}
+      {/* Content - Lightroom order */}
       <ScrollArea className="flex-1">
         <div className="p-4">
           <Accordion type="multiple" defaultValue={['basic', 'curve', 'hsl', 'colorgrading']} className="space-y-2">
-            {/* Basic Adjustments */}
+            {/* 1. Basic Adjustments (Grundeinstellungen) */}
             <AccordionItem value="basic" className="border-none">
               <AccordionTrigger className="py-2 text-xs font-medium hover:no-underline">
-                Grundlegende Einstellungen
+                Grundeinstellungen
               </AccordionTrigger>
               <AccordionContent className="pt-2 pb-4">
                 <BasicAdjustments settings={settings} onChange={onChange} />
               </AccordionContent>
             </AccordionItem>
 
-            {/* Tone Curve */}
+            {/* 2. Tone Curve (Gradationskurve) */}
             <AccordionItem value="curve" className="border-none">
               <AccordionTrigger className="py-2 text-xs font-medium hover:no-underline">
                 Gradationskurve
@@ -72,7 +74,7 @@ export function AdjustmentsPanel({ settings, onChange, presetName }: Adjustments
               </AccordionContent>
             </AccordionItem>
 
-            {/* HSL */}
+            {/* 3. HSL / Color (HSL / Farbe) */}
             <AccordionItem value="hsl" className="border-none">
               <AccordionTrigger className="py-2 text-xs font-medium hover:no-underline">
                 HSL / Farbe
@@ -82,7 +84,7 @@ export function AdjustmentsPanel({ settings, onChange, presetName }: Adjustments
               </AccordionContent>
             </AccordionItem>
 
-            {/* Color Grading */}
+            {/* 4. Color Grading (Split Toning) */}
             <AccordionItem value="colorgrading" className="border-none">
               <AccordionTrigger className="py-2 text-xs font-medium hover:no-underline">
                 Color Grading
@@ -92,7 +94,7 @@ export function AdjustmentsPanel({ settings, onChange, presetName }: Adjustments
               </AccordionContent>
             </AccordionItem>
 
-            {/* Gray Mixer - only when grayscale is enabled */}
+            {/* 5. B&W Mixer - only when grayscale is enabled */}
             {settings.convertToGrayscale && (
               <AccordionItem value="graymixer" className="border-none">
                 <AccordionTrigger className="py-2 text-xs font-medium hover:no-underline">
@@ -103,6 +105,16 @@ export function AdjustmentsPanel({ settings, onChange, presetName }: Adjustments
                 </AccordionContent>
               </AccordionItem>
             )}
+
+            {/* 6. Calibration (Kalibrierung) */}
+            <AccordionItem value="calibration" className="border-none">
+              <AccordionTrigger className="py-2 text-xs font-medium hover:no-underline">
+                Kalibrierung
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <Calibration settings={settings} onChange={onChange} />
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
       </ScrollArea>
