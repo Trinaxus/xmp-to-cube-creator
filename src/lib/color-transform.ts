@@ -348,47 +348,85 @@ export function transformColor(
     outB = outB + (mb - 0.5) * midtoneStrength;
   }
   
-  // 10. Apply camera calibration
+  // 10. Apply camera calibration - more accurate color matrix approach
   if (settings.calibration) {
-    // Shadow tint affects the tint of shadows
+    // Store original values
+    const origR = outR;
+    const origG = outG;
+    const origB = outB;
+    
+    // Shadow tint affects the tint of shadows (green-magenta axis)
     if (settings.calibration.shadowTint !== 0) {
       const shadowWeight = Math.pow(1 - luminance, 2);
-      const tintAmount = (settings.calibration.shadowTint / 100) * shadowWeight * 0.15;
-      outG = outG - tintAmount; // Negative tint = more green, positive = more magenta
+      const tintAmount = (settings.calibration.shadowTint / 100) * shadowWeight * 0.2;
+      // Positive = magenta, Negative = green
+      outG = outG - tintAmount;
       outR = outR + tintAmount * 0.5;
       outB = outB + tintAmount * 0.5;
     }
     
-    // Primary color adjustments - shift hue and saturation of primary colors
-    // Red primary
-    const redHueShift = (settings.calibration.redHue / 100) * 0.1;
-    const redSatMult = 1 + (settings.calibration.redSaturation / 100) * 0.5;
+    // Primary color calibration - affects how RGB primaries are rendered
+    // These work as cross-channel influences
     
-    // Green primary
-    const greenHueShift = (settings.calibration.greenHue / 100) * 0.1;
-    const greenSatMult = 1 + (settings.calibration.greenSaturation / 100) * 0.5;
+    // Red Hue: positive shifts red toward yellow, negative toward magenta
+    const redHue = settings.calibration.redHue / 100;
+    // Red Saturation: affects intensity of red channel
+    const redSat = settings.calibration.redSaturation / 100;
     
-    // Blue primary
-    const blueHueShift = (settings.calibration.blueHue / 100) * 0.1;
-    const blueSatMult = 1 + (settings.calibration.blueSaturation / 100) * 0.5;
+    // Green Hue: positive shifts green toward cyan, negative toward yellow
+    const greenHue = settings.calibration.greenHue / 100;
+    // Green Saturation: affects intensity of green channel
+    const greenSat = settings.calibration.greenSaturation / 100;
     
-    // Apply color matrix transformation for primary color shifts
-    // This simulates shifting the primary color response
-    const rComponent = outR;
-    const gComponent = outG;
-    const bComponent = outB;
+    // Blue Hue: positive shifts blue toward magenta, negative toward cyan
+    const blueHue = settings.calibration.blueHue / 100;
+    // Blue Saturation: affects intensity of blue channel
+    const blueSat = settings.calibration.blueSaturation / 100;
     
-    // Red channel adjustments - shifts toward orange/magenta
-    outR = rComponent + (gComponent * redHueShift * 0.3) - (bComponent * redHueShift * 0.3);
-    outR = outR * redSatMult - (redSatMult - 1) * (gComponent + bComponent) * 0.15;
+    // Apply hue shifts - cross-channel color mixing
+    // The weight of each channel determines how much it influences other channels
+    const redWeight = origR / Math.max(0.001, origR + origG + origB);
+    const greenWeight = origG / Math.max(0.001, origR + origG + origB);
+    const blueWeight = origB / Math.max(0.001, origR + origG + origB);
     
-    // Green channel adjustments - shifts toward yellow/cyan
-    outG = gComponent + (rComponent * greenHueShift * 0.3) - (bComponent * greenHueShift * 0.3);
-    outG = outG * greenSatMult - (greenSatMult - 1) * (rComponent + bComponent) * 0.15;
+    // Red primary adjustments
+    // Positive red hue: steal from blue, add to green (shift toward yellow/orange)
+    // Negative red hue: steal from green, add to blue (shift toward magenta)
+    const redInfluence = origR * 0.3;
+    outR = outR + redHue * redInfluence * 0.5;
+    outG = outG + redHue * redInfluence;  // More green when positive
+    outB = outB - redHue * redInfluence;  // Less blue when positive
     
-    // Blue channel adjustments - shifts toward cyan/magenta
-    outB = bComponent + (rComponent * blueHueShift * 0.3) - (gComponent * blueHueShift * 0.3);
-    outB = outB * blueSatMult - (blueSatMult - 1) * (rComponent + gComponent) * 0.15;
+    // Red saturation - boost or reduce red channel relative to others
+    outR = outR + redSat * redWeight * 0.4;
+    outG = outG - redSat * redWeight * 0.15;
+    outB = outB - redSat * redWeight * 0.15;
+    
+    // Green primary adjustments
+    // Positive green hue: add blue influence (shift toward cyan)
+    // Negative green hue: add red influence (shift toward yellow)
+    const greenInfluence = origG * 0.3;
+    outR = outR - greenHue * greenInfluence;  // Less red when positive (cyan)
+    outG = outG + greenHue * greenInfluence * 0.5;
+    outB = outB + greenHue * greenInfluence;  // More blue when positive
+    
+    // Green saturation
+    outR = outR - greenSat * greenWeight * 0.15;
+    outG = outG + greenSat * greenWeight * 0.4;
+    outB = outB - greenSat * greenWeight * 0.15;
+    
+    // Blue primary adjustments
+    // Positive blue hue: add red influence (shift toward magenta/purple)
+    // Negative blue hue: add green influence (shift toward cyan)
+    const blueInfluence = origB * 0.3;
+    outR = outR + blueHue * blueInfluence;  // More red when positive (magenta)
+    outG = outG - blueHue * blueInfluence;  // Less green when positive
+    outB = outB + blueHue * blueInfluence * 0.5;
+    
+    // Blue saturation
+    outR = outR - blueSat * blueWeight * 0.15;
+    outG = outG - blueSat * blueWeight * 0.15;
+    outB = outB + blueSat * blueWeight * 0.4;
   }
   
   // 11. Apply temperature/tint

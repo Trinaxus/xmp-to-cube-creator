@@ -70,6 +70,7 @@ export interface XMPColorSettings {
     highlightHue: number;
     highlightSaturation: number;
     balance: number;
+    blending: number;
   };
   
   // Tone Curve
@@ -205,7 +206,8 @@ export function parseXMPContent(content: string): XMPColorSettings {
       midtoneSaturation: parseNumber(getAttr('ColorGradeMidtoneSat')),
       highlightHue: parseNumber(getAttr('SplitToningHighlightHue') || getAttr('ColorGradeHighlightHue')),
       highlightSaturation: parseNumber(getAttr('SplitToningHighlightSaturation') || getAttr('ColorGradeHighlightSat')),
-      balance: parseNumber(getAttr('SplitToningBalance') || getAttr('ColorGradeBlending')),
+      balance: parseNumber(getAttr('SplitToningBalance') || getAttr('ColorGradeGlobalBalance')),
+      blending: parseNumber(getAttr('ColorGradeBlending')) || 50,
     },
     
     // Tone Curves
