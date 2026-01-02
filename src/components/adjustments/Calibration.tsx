@@ -50,6 +50,7 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           onChange={(v) => updateCalibration('redHue', v)}
           min={-100}
           max={100}
+          hueColor="primary-red"
         />
         <AdjustmentSlider
           label="Sättigung"
@@ -72,6 +73,7 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           onChange={(v) => updateCalibration('greenHue', v)}
           min={-100}
           max={100}
+          hueColor="primary-green"
         />
         <AdjustmentSlider
           label="Sättigung"
@@ -94,6 +96,7 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           onChange={(v) => updateCalibration('blueHue', v)}
           min={-100}
           max={100}
+          hueColor="primary-blue"
         />
         <AdjustmentSlider
           label="Sättigung"

@@ -3,6 +3,8 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useEffect } from 'react';
 
+type HueColorType = 'red' | 'orange' | 'yellow' | 'green' | 'aqua' | 'blue' | 'purple' | 'magenta' | 'primary-red' | 'primary-green' | 'primary-blue';
+
 interface AdjustmentSliderProps {
   label: string;
   value: number;
@@ -12,6 +14,25 @@ interface AdjustmentSliderProps {
   step?: number;
   showValue?: boolean;
   defaultValue?: number;
+  hueColor?: HueColorType;
+}
+
+// Generate gradient colors for hue sliders
+function getHueGradient(baseColor: HueColorType): string {
+  const hueGradients: Record<HueColorType, string> = {
+    'red': 'linear-gradient(to right, hsl(330, 80%, 50%), hsl(0, 80%, 50%), hsl(30, 80%, 50%))',
+    'orange': 'linear-gradient(to right, hsl(0, 80%, 50%), hsl(30, 80%, 50%), hsl(60, 80%, 50%))',
+    'yellow': 'linear-gradient(to right, hsl(30, 80%, 50%), hsl(60, 80%, 50%), hsl(90, 80%, 50%))',
+    'green': 'linear-gradient(to right, hsl(60, 70%, 45%), hsl(120, 70%, 40%), hsl(180, 70%, 45%))',
+    'aqua': 'linear-gradient(to right, hsl(150, 70%, 45%), hsl(180, 70%, 50%), hsl(210, 70%, 50%))',
+    'blue': 'linear-gradient(to right, hsl(180, 70%, 50%), hsl(220, 70%, 50%), hsl(260, 70%, 50%))',
+    'purple': 'linear-gradient(to right, hsl(240, 70%, 55%), hsl(270, 70%, 55%), hsl(300, 70%, 55%))',
+    'magenta': 'linear-gradient(to right, hsl(280, 70%, 55%), hsl(310, 70%, 55%), hsl(340, 70%, 55%))',
+    'primary-red': 'linear-gradient(to right, hsl(330, 80%, 50%), hsl(0, 80%, 50%), hsl(30, 80%, 50%))',
+    'primary-green': 'linear-gradient(to right, hsl(60, 70%, 45%), hsl(120, 70%, 40%), hsl(180, 70%, 45%))',
+    'primary-blue': 'linear-gradient(to right, hsl(180, 70%, 50%), hsl(220, 70%, 50%), hsl(260, 70%, 50%))',
+  };
+  return hueGradients[baseColor];
 }
 
 export function AdjustmentSlider({
@@ -23,6 +44,7 @@ export function AdjustmentSlider({
   step = 1,
   showValue = true,
   defaultValue,
+  hueColor,
 }: AdjustmentSliderProps) {
   const [inputValue, setInputValue] = useState(String(value));
 
@@ -93,6 +115,17 @@ export function AdjustmentSlider({
         )}
       </div>
       <div className="relative">
+        {hueColor && (
+          <div 
+            className="absolute inset-0 rounded-full opacity-40 pointer-events-none"
+            style={{ 
+              background: getHueGradient(hueColor),
+              height: '6px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+            }}
+          />
+        )}
         <Slider
           value={[value]}
           min={min}

@@ -337,7 +337,61 @@ export function transformColor(
     outB = outB + (hb - 0.5) * highlightStrength;
   }
   
-  // 9. Apply temperature/tint
+  // 9. Apply midtones split toning
+  if (settings.splitToning.midtoneSaturation > 0) {
+    const midtoneLum = 1 - Math.abs(luminance - 0.5) * 2;
+    const midtoneHue = settings.splitToning.midtoneHue / 360;
+    const midtoneStrength = (settings.splitToning.midtoneSaturation / 100) * midtoneLum * 0.2;
+    const [mr, mg, mb] = hslToRgb(midtoneHue, 1, 0.5);
+    outR = outR + (mr - 0.5) * midtoneStrength;
+    outG = outG + (mg - 0.5) * midtoneStrength;
+    outB = outB + (mb - 0.5) * midtoneStrength;
+  }
+  
+  // 10. Apply camera calibration
+  if (settings.calibration) {
+    // Shadow tint affects the tint of shadows
+    if (settings.calibration.shadowTint !== 0) {
+      const shadowWeight = Math.pow(1 - luminance, 2);
+      const tintAmount = (settings.calibration.shadowTint / 100) * shadowWeight * 0.15;
+      outG = outG - tintAmount; // Negative tint = more green, positive = more magenta
+      outR = outR + tintAmount * 0.5;
+      outB = outB + tintAmount * 0.5;
+    }
+    
+    // Primary color adjustments - shift hue and saturation of primary colors
+    // Red primary
+    const redHueShift = (settings.calibration.redHue / 100) * 0.1;
+    const redSatMult = 1 + (settings.calibration.redSaturation / 100) * 0.5;
+    
+    // Green primary
+    const greenHueShift = (settings.calibration.greenHue / 100) * 0.1;
+    const greenSatMult = 1 + (settings.calibration.greenSaturation / 100) * 0.5;
+    
+    // Blue primary
+    const blueHueShift = (settings.calibration.blueHue / 100) * 0.1;
+    const blueSatMult = 1 + (settings.calibration.blueSaturation / 100) * 0.5;
+    
+    // Apply color matrix transformation for primary color shifts
+    // This simulates shifting the primary color response
+    const rComponent = outR;
+    const gComponent = outG;
+    const bComponent = outB;
+    
+    // Red channel adjustments - shifts toward orange/magenta
+    outR = rComponent + (gComponent * redHueShift * 0.3) - (bComponent * redHueShift * 0.3);
+    outR = outR * redSatMult - (redSatMult - 1) * (gComponent + bComponent) * 0.15;
+    
+    // Green channel adjustments - shifts toward yellow/cyan
+    outG = gComponent + (rComponent * greenHueShift * 0.3) - (bComponent * greenHueShift * 0.3);
+    outG = outG * greenSatMult - (greenSatMult - 1) * (rComponent + bComponent) * 0.15;
+    
+    // Blue channel adjustments - shifts toward cyan/magenta
+    outB = bComponent + (rComponent * blueHueShift * 0.3) - (gComponent * blueHueShift * 0.3);
+    outB = outB * blueSatMult - (blueSatMult - 1) * (rComponent + gComponent) * 0.15;
+  }
+  
+  // 11. Apply temperature/tint
   if (settings.temperature !== 0) {
     const tempShift = settings.temperature / 100 * 0.1;
     outR = outR + tempShift;
