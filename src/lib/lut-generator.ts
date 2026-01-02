@@ -41,6 +41,7 @@ const defaultSettings: XMPColorSettings = {
     highlightHue: 0,
     highlightSaturation: 0,
     balance: 0,
+    blending: 50,
   },
   calibration: {
     shadowTint: 0,
