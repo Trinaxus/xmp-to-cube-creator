@@ -1,6 +1,6 @@
 import type { XMPColorSettings } from '@/lib/xmp-parser';
 
-export type LUTSize = '17' | '33' | '65';
+export type LUTSize = '17' | '25' | '33' | '65';
 export type ColorSpace = 'rec709' | 'log_slog3' | 'log_vlog' | 'log_clog' | 'wide_gamut';
 export type PreviewGamma = 'srgb' | 'linear' | 'log';
 
@@ -58,6 +58,7 @@ export const EXPORT_VARIANTS: ExportVariant[] = [
 
 export const LUT_SIZES: { value: LUTSize; label: string }[] = [
   { value: '17', label: '17×17×17' },
+  { value: '25', label: '25×25×25' },
   { value: '33', label: '33×33×33' },
   { value: '65', label: '65×65×65' },
 ];

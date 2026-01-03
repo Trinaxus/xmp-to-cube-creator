@@ -5,6 +5,7 @@ import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
 import type { ExportVariant, LUTExportConfig, XMPPreset } from '@/types/lut';
 import { EXPORT_VARIANTS, LUT_SIZES } from '@/types/lut';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 interface ExportPanelProps {
   config: LUTExportConfig;
@@ -132,31 +133,38 @@ function VariantCard({
   onToggle: () => void;
 }) {
   return (
-    <button
-      onClick={onToggle}
-      className={cn(
-        'w-full flex items-start gap-3 p-3 rounded-md border text-left transition-all',
-        selected
-          ? 'border-primary bg-primary/10'
-          : 'border-border bg-secondary/50 hover:border-primary/50'
-      )}
-    >
-      <div
-        className={cn(
-          'w-4 h-4 rounded border flex items-center justify-center shrink-0 mt-0.5',
-          selected
-            ? 'bg-primary border-primary'
-            : 'border-muted-foreground/50'
-        )}
-      >
-        {selected && <Check className="w-3 h-3 text-primary-foreground" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-mono font-medium">{variant.name}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">
-          {variant.description}
-        </p>
-      </div>
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onToggle}
+          className={cn(
+            'w-full flex items-start gap-3 p-3 rounded-md border text-left transition-all',
+            selected
+              ? 'border-primary bg-primary/10'
+              : 'border-border bg-secondary/50 hover:border-primary/50'
+          )}
+        >
+          <div
+            className={cn(
+              'w-4 h-4 rounded border flex items-center justify-center shrink-0 mt-0.5',
+              selected
+                ? 'bg-primary border-primary'
+                : 'border-muted-foreground/50'
+            )}
+          >
+            {selected && <Check className="w-3 h-3 text-primary-foreground" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-mono font-medium">{variant.name}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {variant.description}
+            </p>
+          </div>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="max-w-xs text-[10px] leading-relaxed">
+        {variant.description}
+      </TooltipContent>
+    </Tooltip>
   );
 }

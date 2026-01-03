@@ -7,15 +7,18 @@ import { HSLAdjustments } from './HSLAdjustments';
 import { ColorGrading } from './ColorGrading';
 import { GrayMixer } from './GrayMixer';
 import { Calibration } from './Calibration';
+import { Button } from '@/components/ui/button';
 import type { XMPColorSettings } from '@/lib/xmp-parser';
 
 interface AdjustmentsPanelProps {
   settings: XMPColorSettings | null;
   onChange: (settings: XMPColorSettings) => void;
   presetName?: string;
+  onResetXMP: () => void;
+  onResetDefault: () => void;
 }
 
-export function AdjustmentsPanel({ settings, onChange, presetName }: AdjustmentsPanelProps) {
+export function AdjustmentsPanel({ settings, onChange, presetName, onResetXMP, onResetDefault }: AdjustmentsPanelProps) {
   if (!settings) {
     return (
       <aside className="w-80 border-l border-border bg-sidebar flex flex-col h-full">
@@ -39,21 +42,43 @@ export function AdjustmentsPanel({ settings, onChange, presetName }: Adjustments
     <aside className="w-80 border-l border-border bg-sidebar flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Sliders className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">Anpassungen</h2>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-primary" />
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-foreground">Anpassungen</h2>
+              {presetName && (
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                  {presetName}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="xs"
+              className="h-6 px-2 text-[10px]"
+              onClick={onResetXMP}
+            >
+              XMP
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-6 px-2 text-[10px]"
+              onClick={onResetDefault}
+            >
+              Default
+            </Button>
+          </div>
         </div>
-        {presetName && (
-          <p className="text-[10px] text-muted-foreground mt-1 truncate">
-            {presetName}
-          </p>
-        )}
       </div>
 
       {/* Content - Lightroom order */}
       <ScrollArea className="flex-1">
         <div className="p-4">
-          <Accordion type="multiple" defaultValue={['basic', 'curve', 'hsl', 'colorgrading']} className="space-y-2">
+          <Accordion type="multiple" defaultValue={['basic']} className="space-y-2">
             {/* 1. Basic Adjustments (Grundeinstellungen) */}
             <AccordionItem value="basic" className="border-none">
               <AccordionTrigger className="py-2 text-xs font-medium hover:no-underline">

@@ -15,6 +15,7 @@ export function ImagePreview({ image, preset }: ImagePreviewProps) {
   const [splitPosition, setSplitPosition] = useState(50);
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
@@ -90,7 +91,8 @@ export function ImagePreview({ image, preset }: ImagePreviewProps) {
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const percentage = (x / rect.width) * 100;
-      setSplitPosition(Math.max(5, Math.min(95, percentage)));
+      // Erlaube, dass der Split-Slider bis an die Ränder geschoben werden kann (0–100 %)
+      setSplitPosition(Math.max(0, Math.min(100, percentage)));
     };
 
     const handleMouseUp = () => {
@@ -105,6 +107,10 @@ export function ImagePreview({ image, preset }: ImagePreviewProps) {
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, []);
+
+  const toggleZoom = () => {
+    setIsZoomed((prev) => !prev);
+  };
 
   if (!image) {
     return (
@@ -125,6 +131,10 @@ export function ImagePreview({ image, preset }: ImagePreviewProps) {
   }
 
   const afterImageSrc = processedImageUrl || image.dataUrl;
+
+  const baseImageClass =
+    'max-w-full transition-all duration-300 ' +
+    (isZoomed ? 'max-h-[90vh] object-cover' : 'max-h-[60vh] object-contain');
 
   return (
     <div className="flex-1 flex flex-col bg-surface-sunken rounded-lg border border-border overflow-hidden">
@@ -169,7 +179,7 @@ export function ImagePreview({ image, preset }: ImagePreviewProps) {
           <span className="text-[10px] font-mono text-muted-foreground">
             {image.width}×{image.height}
           </span>
-          <Button variant="ghost" size="xs">
+          <Button variant="ghost" size="xs" onClick={toggleZoom}>
             <Maximize2 className="w-3 h-3" />
           </Button>
         </div>
@@ -177,14 +187,18 @@ export function ImagePreview({ image, preset }: ImagePreviewProps) {
 
       {/* Image container */}
       <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4">
-        <div className="relative max-w-full max-h-full" ref={containerRef}>
+        <div
+          className="relative max-w-full max-h-full"
+          ref={containerRef}
+          onDoubleClick={toggleZoom}
+        >
           {viewMode === 'split' ? (
             <div className="relative select-none">
               {/* Before image (full width, underneath) */}
               <img
                 src={image.dataUrl}
                 alt="Before"
-                className="max-w-full max-h-[60vh] object-contain"
+                className={baseImageClass}
                 draggable={false}
               />
               
@@ -198,7 +212,7 @@ export function ImagePreview({ image, preset }: ImagePreviewProps) {
                 <img
                   src={afterImageSrc}
                   alt="After"
-                  className="max-w-full max-h-[60vh] object-contain"
+                  className={baseImageClass}
                   draggable={false}
                 />
               </div>
@@ -226,7 +240,7 @@ export function ImagePreview({ image, preset }: ImagePreviewProps) {
             <img
               src={viewMode === 'before' ? image.dataUrl : afterImageSrc}
               alt={viewMode === 'before' ? 'Before' : 'After'}
-              className="max-w-full max-h-[60vh] object-contain transition-all duration-300"
+              className={baseImageClass}
             />
           )}
         </div>

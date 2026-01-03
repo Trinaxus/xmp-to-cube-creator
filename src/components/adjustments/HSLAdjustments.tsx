@@ -48,9 +48,10 @@ export function HSLAdjustments({ settings, onChange }: HSLAdjustmentsProps) {
               label={label}
               value={settings.hsl[type][key]}
               onChange={(v) => updateHSL(type, key, v)}
-              min={type === 'hue' ? -100 : -100}
-              max={type === 'hue' ? 100 : 100}
-              hueColor={type === 'hue' ? key : undefined}
+              min={-100}
+              max={100}
+              hueColor={key}
+              mode={type}
             />
           </div>
         </div>

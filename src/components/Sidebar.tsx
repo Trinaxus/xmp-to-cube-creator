@@ -3,6 +3,7 @@ import { ControlPanel } from './ControlPanel';
 import { ExportPanel } from './ExportPanel';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
+import { Button } from './ui/button';
 import type { XMPPreset, ReferenceImage, LUTExportConfig } from '@/types/lut';
 
 interface SidebarProps {
@@ -19,6 +20,7 @@ interface SidebarProps {
   activePreset: XMPPreset | null;
   onExport: () => void;
   isExporting: boolean;
+  onOpenAnalysis: () => void;
 }
 
 export function Sidebar({
@@ -35,6 +37,7 @@ export function Sidebar({
   activePreset,
   onExport,
   isExporting,
+  onOpenAnalysis,
 }: SidebarProps) {
   return (
     <aside className="w-80 border-r border-border bg-sidebar flex flex-col h-full">
@@ -55,6 +58,18 @@ export function Sidebar({
               files={xmpFiles}
               onRemoveFile={onRemoveXMP}
             />
+
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="xs"
+                className="h-7 text-[10px] font-mono"
+                disabled={!activePreset}
+                onClick={onOpenAnalysis}
+              >
+                XMP Analyse
+              </Button>
+            </div>
           </section>
 
           <Separator className="bg-border" />

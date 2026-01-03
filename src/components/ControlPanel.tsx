@@ -114,13 +114,27 @@ export function ControlPanel({ config, onConfigChange }: ControlPanelProps) {
         </div>
       </div>
 
-      {/* Info box */}
-      <div className="p-3 rounded-md bg-info/10 border border-info/20">
-        <p className="text-[10px] text-info leading-relaxed">
-          <strong>Note:</strong> LUTs encode global color transforms only. Local adjustments, 
-          masks, texture, clarity, and grain cannot be captured.
-        </p>
-      </div>
+      {/* Info box – nur anzeigen, wenn Clamp aktiv ist */}
+      {config.clamp && (
+        <div className="p-3 rounded-md bg-info/10 border border-info/20">
+          <p className="text-[10px] text-info leading-relaxed space-y-1">
+            <span className="block">
+              <strong>Hinweis:</strong> Der Export erzeugt eine klassische 3D-LUT, die nur
+              <strong> globale Farb- und Tonwert-Änderungen</strong> beinhaltet.
+            </span>
+            <span className="block">
+              Enthalten sind z.B. Weißabgleich, Kontrast, Grundkorrekturen, HSL, Color Grading
+              und Kamera-Kalibrierung – also alles, was sich gleichmäßig auf das gesamte Bild
+              anwenden lässt.
+            </span>
+            <span className="block">
+              <strong>Nicht</strong> übernommen werden lokale Anpassungen (Verläufe, Radial‑Filter,
+              Masken), Retusche, Körnung, Vignettierung, Schärfen, Klarheit/Texture sowie
+              sonstige werkzeugspezifische Effekte aus Lightroom oder Camera Raw.
+            </span>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

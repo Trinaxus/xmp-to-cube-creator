@@ -10,7 +10,7 @@ export function Header() {
             <Boxes className="w-4 h-4 text-primary" />
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-sm tracking-tight">LUT Forge</span>
+            <span className="font-semibold text-sm tracking-tight">xmp to cube creator</span>
             <span className="text-[10px] text-muted-foreground font-mono">XMP → .CUBE</span>
           </div>
         </div>

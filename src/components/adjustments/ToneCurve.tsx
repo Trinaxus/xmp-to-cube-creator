@@ -24,8 +24,12 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
   const [localPoints, setLocalPoints] = useState(points);
   const [showPointEditor, setShowPointEditor] = useState(false);
 
+  // Helper: always keep points sorted by X so applyToneCurve can use all points.
+  const sortPoints = (pts: [number, number][]) =>
+    [...pts].sort((a, b) => a[0] - b[0]);
+
   useEffect(() => {
-    setLocalPoints(points);
+    setLocalPoints(sortPoints(points));
   }, [points]);
 
   const drawCurve = useCallback(() => {
@@ -70,27 +74,42 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw curve
-    const sortedPoints = [...localPoints].sort((a, b) => a[0] - b[0]);
-    
+    // Draw curve (smooth Catmull-Rom style Bezier spline)
+    const sortedPoints = sortPoints(localPoints);
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.beginPath();
 
-    // Simple linear interpolation between points
     if (sortedPoints.length > 0) {
-      const firstPoint = sortedPoints[0];
-      ctx.moveTo(
-        (firstPoint[0] / 255) * width,
-        height - (firstPoint[1] / 255) * height
-      );
+      const canvasPoints = sortedPoints.map(([x, y]) => ({
+        x: (x / 255) * width,
+        y: height - (y / 255) * height,
+      }));
 
-      for (let i = 1; i < sortedPoints.length; i++) {
-        const point = sortedPoints[i];
-        ctx.lineTo(
-          (point[0] / 255) * width,
-          height - (point[1] / 255) * height
-        );
+      const first = canvasPoints[0];
+      ctx.moveTo(first.x, first.y);
+
+      if (canvasPoints.length === 2) {
+        // Nur eine Gerade, wenn nur zwei Punkte existieren
+        ctx.lineTo(canvasPoints[1].x, canvasPoints[1].y);
+      } else {
+        for (let i = 0; i < canvasPoints.length - 1; i++) {
+          const p0 = i === 0 ? canvasPoints[0] : canvasPoints[i - 1];
+          const p1 = canvasPoints[i];
+          const p2 = canvasPoints[i + 1];
+          const p3 =
+            i + 2 < canvasPoints.length
+              ? canvasPoints[i + 2]
+              : canvasPoints[canvasPoints.length - 1];
+
+          // Catmull-Rom zu Bezier Konvertierung für eine glatte Kurve
+          const cp1x = p1.x + (p2.x - p0.x) / 6;
+          const cp1y = p1.y + (p2.y - p0.y) / 6;
+          const cp2x = p2.x - (p3.x - p1.x) / 6;
+          const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
       }
     }
     ctx.stroke();
@@ -153,8 +172,9 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
         ...localPoints,
         [Math.round(coords.x), Math.round(coords.y)],
       ];
-      setLocalPoints(newPoints);
-      onChange(newPoints);
+      const sorted = sortPoints(newPoints);
+      setLocalPoints(sorted);
+      onChange(sorted);
     }
   };
 
@@ -162,17 +182,19 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
     if (draggingIndex === null) return;
 
     const coords = getCanvasCoords(e);
-    const newPoints = [...localPoints];
-    newPoints[draggingIndex] = [
+    const updated: [number, number][] = [...localPoints];
+    updated[draggingIndex] = [
       Math.max(0, Math.min(255, Math.round(coords.x))),
       Math.max(0, Math.min(255, Math.round(coords.y))),
     ];
-    setLocalPoints(newPoints);
+    setLocalPoints(sortPoints(updated));
   };
 
   const handleMouseUp = () => {
     if (draggingIndex !== null) {
-      onChange(localPoints);
+      const sorted = sortPoints(localPoints);
+      setLocalPoints(sorted);
+      onChange(sorted);
     }
     setDraggingIndex(null);
   };
@@ -198,30 +220,33 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
 
     if (nearestIndex >= 0) {
       const newPoints = localPoints.filter((_, i) => i !== nearestIndex);
-      setLocalPoints(newPoints);
-      onChange(newPoints);
+      const sorted = sortPoints(newPoints);
+      setLocalPoints(sorted);
+      onChange(sorted);
     }
   };
 
   const updatePointValue = (index: number, axis: 'x' | 'y', value: number) => {
-    const newPoints = [...localPoints];
+    const newPoints: [number, number][] = [...localPoints];
     const clampedValue = Math.max(0, Math.min(255, value));
     if (axis === 'x') {
       newPoints[index] = [clampedValue, newPoints[index][1]];
     } else {
       newPoints[index] = [newPoints[index][0], clampedValue];
     }
-    setLocalPoints(newPoints);
-    onChange(newPoints);
+    const sorted = sortPoints(newPoints);
+    setLocalPoints(sorted);
+    onChange(sorted);
   };
 
   const resetCurve = () => {
     const defaultPoints: [number, number][] = [[0, 0], [255, 255]];
-    setLocalPoints(defaultPoints);
-    onChange(defaultPoints);
+    const sorted = sortPoints(defaultPoints);
+    setLocalPoints(sorted);
+    onChange(sorted);
   };
 
-  const sortedPointsForEditor = [...localPoints].sort((a, b) => a[0] - b[0]);
+  const sortedPointsForEditor = sortPoints(localPoints);
 
   return (
     <div className="space-y-2">
@@ -261,7 +286,7 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
 
       {/* Point Editor */}
       {showPointEditor && (
-        <div className="space-y-2 p-2 rounded-md bg-secondary/50">
+        <div className="relative bg-secondary/50 border border-border rounded-md overflow-hidden">
           <div className="grid grid-cols-3 gap-2 text-[10px] text-muted-foreground font-medium">
             <span>Punkt</span>
             <span className="text-center">Eingang (X)</span>
@@ -274,14 +299,24 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
             return (
               <div key={sortedIndex} className="grid grid-cols-3 gap-2 items-center">
                 <span className="text-[10px] text-muted-foreground">
-                  {sortedIndex === 0 ? 'Start' : sortedIndex === sortedPointsForEditor.length - 1 ? 'Ende' : `P${sortedIndex}`}
+                  {sortedIndex === 0
+                    ? 'Start'
+                    : sortedIndex === sortedPointsForEditor.length - 1
+                    ? 'Ende'
+                    : `P${sortedIndex}`}
                 </span>
                 <Input
                   type="number"
                   min={0}
                   max={255}
                   value={point[0]}
-                  onChange={(e) => updatePointValue(originalIndex, 'x', parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updatePointValue(
+                      originalIndex,
+                      'x',
+                      parseInt(e.target.value) || 0
+                    )
+                  }
                   className="h-6 text-[10px] text-center px-1"
                 />
                 <Input
@@ -289,7 +324,13 @@ function CurveCanvas({ points, onChange, color = 'hsl(180 70% 45%)' }: CurveCanv
                   min={0}
                   max={255}
                   value={point[1]}
-                  onChange={(e) => updatePointValue(originalIndex, 'y', parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updatePointValue(
+                      originalIndex,
+                      'y',
+                      parseInt(e.target.value) || 0
+                    )
+                  }
                   className="h-6 text-[10px] text-center px-1"
                 />
               </div>

@@ -65,10 +65,13 @@ export interface XMPColorSettings {
   splitToning: {
     shadowHue: number;
     shadowSaturation: number;
+    shadowLuminance: number;
     midtoneHue: number;
     midtoneSaturation: number;
+    midtoneLuminance: number;
     highlightHue: number;
     highlightSaturation: number;
+    highlightLuminance: number;
     balance: number;
     blending: number;
   };
@@ -202,10 +205,13 @@ export function parseXMPContent(content: string): XMPColorSettings {
     splitToning: {
       shadowHue: parseNumber(getAttr('SplitToningShadowHue') || getAttr('ColorGradeShadowHue')),
       shadowSaturation: parseNumber(getAttr('SplitToningShadowSaturation') || getAttr('ColorGradeShadowSat')),
+      shadowLuminance: 0,
       midtoneHue: parseNumber(getAttr('ColorGradeMidtoneHue')),
       midtoneSaturation: parseNumber(getAttr('ColorGradeMidtoneSat')),
+      midtoneLuminance: 0,
       highlightHue: parseNumber(getAttr('SplitToningHighlightHue') || getAttr('ColorGradeHighlightHue')),
       highlightSaturation: parseNumber(getAttr('SplitToningHighlightSaturation') || getAttr('ColorGradeHighlightSat')),
+      highlightLuminance: 0,
       balance: parseNumber(getAttr('SplitToningBalance') || getAttr('ColorGradeGlobalBalance')),
       blending: parseNumber(getAttr('ColorGradeBlending')) || 50,
     },

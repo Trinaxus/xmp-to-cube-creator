@@ -35,6 +35,8 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           onChange={(v) => updateCalibration('shadowTint', v)}
           min={-100}
           max={100}
+          hueColor="magenta"
+          mode="hue"
         />
       </div>
 
@@ -51,6 +53,7 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           min={-100}
           max={100}
           hueColor="primary-red"
+          mode="hue"
         />
         <AdjustmentSlider
           label="Sättigung"
@@ -58,6 +61,8 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           onChange={(v) => updateCalibration('redSaturation', v)}
           min={-100}
           max={100}
+          hueColor="primary-red"
+          mode="saturation"
         />
       </div>
 
@@ -74,6 +79,7 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           min={-100}
           max={100}
           hueColor="primary-green"
+          mode="hue"
         />
         <AdjustmentSlider
           label="Sättigung"
@@ -81,6 +87,8 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           onChange={(v) => updateCalibration('greenSaturation', v)}
           min={-100}
           max={100}
+          hueColor="primary-green"
+          mode="saturation"
         />
       </div>
 
@@ -97,6 +105,7 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           min={-100}
           max={100}
           hueColor="primary-blue"
+          mode="hue"
         />
         <AdjustmentSlider
           label="Sättigung"
@@ -104,6 +113,8 @@ export function Calibration({ settings, onChange }: CalibrationProps) {
           onChange={(v) => updateCalibration('blueSaturation', v)}
           min={-100}
           max={100}
+          hueColor="primary-blue"
+          mode="saturation"
         />
       </div>
     </div>

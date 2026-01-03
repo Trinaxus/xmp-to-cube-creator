@@ -18,8 +18,47 @@ export function BasicAdjustments({ settings, onChange }: BasicAdjustmentsProps) 
 
   return (
     <div className="space-y-4">
-      {/* Tone Section */}
+      {/* White Balance Section */}
       <div className="space-y-3">
+        <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          Weißabgleich
+        </h4>
+        <AdjustmentSlider
+          label="Temperatur"
+          value={settings.temperature}
+          onChange={(v) => updateSetting('temperature', v)}
+          min={-100}
+          max={100}
+          hueColor="temperature"
+          mode="hue"
+        />
+        <AdjustmentSlider
+          label="Tonung"
+          value={settings.tint}
+          onChange={(v) => updateSetting('tint', v)}
+          min={-100}
+          max={100}
+          hueColor="tint"
+          mode="hue"
+        />
+      </div>
+
+      {/* Grayscale Toggle */}
+      <div className="flex items-center justify-between pt-2 border-t border-border">
+        <div className="space-y-0.5">
+          <Label className="text-xs">Schwarzweiß</Label>
+          <p className="text-[10px] text-muted-foreground">
+            In Graustufen konvertieren
+          </p>
+        </div>
+        <Switch
+          checked={settings.convertToGrayscale}
+          onCheckedChange={(checked) => updateSetting('convertToGrayscale', checked)}
+        />
+      </div>
+
+      {/* Tone Section */}
+      <div className="space-y-3 pt-2 border-t border-border">
         <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Ton
         </h4>
@@ -87,41 +126,6 @@ export function BasicAdjustments({ settings, onChange }: BasicAdjustmentsProps) 
           label="Sättigung"
           value={settings.saturation}
           onChange={(v) => updateSetting('saturation', v)}
-        />
-      </div>
-
-      {/* White Balance Section */}
-      <div className="space-y-3 pt-2 border-t border-border">
-        <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Weißabgleich
-        </h4>
-        <AdjustmentSlider
-          label="Temperatur"
-          value={settings.temperature}
-          onChange={(v) => updateSetting('temperature', v)}
-          min={-100}
-          max={100}
-        />
-        <AdjustmentSlider
-          label="Tonung"
-          value={settings.tint}
-          onChange={(v) => updateSetting('tint', v)}
-          min={-100}
-          max={100}
-        />
-      </div>
-
-      {/* Grayscale Toggle */}
-      <div className="flex items-center justify-between pt-2 border-t border-border">
-        <div className="space-y-0.5">
-          <Label className="text-xs">Schwarzweiß</Label>
-          <p className="text-[10px] text-muted-foreground">
-            In Graustufen konvertieren
-          </p>
-        </div>
-        <Switch
-          checked={settings.convertToGrayscale}
-          onCheckedChange={(checked) => updateSetting('convertToGrayscale', checked)}
         />
       </div>
     </div>

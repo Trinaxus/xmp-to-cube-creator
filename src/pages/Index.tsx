@@ -4,6 +4,7 @@ import { Header } from '@/components/Header';
 import { Sidebar } from '@/components/Sidebar';
 import { ImagePreview } from '@/components/ImagePreview';
 import { AdjustmentsPanel } from '@/components/adjustments';
+import { XMPAnalysisModal } from '@/components/XMPAnalysisModal';
 import { generateCubeFile, downloadCubeFile } from '@/lib/lut-generator';
 import { parseXMPFile, XMPColorSettings } from '@/lib/xmp-parser';
 import type { XMPPreset, ReferenceImage, LUTExportConfig } from '@/types/lut';
@@ -34,10 +35,13 @@ const defaultSettings: XMPColorSettings = {
   splitToning: {
     shadowHue: 0,
     shadowSaturation: 0,
+    shadowLuminance: 0,
     midtoneHue: 0,
     midtoneSaturation: 0,
+    midtoneLuminance: 0,
     highlightHue: 0,
     highlightSaturation: 0,
+    highlightLuminance: 0,
     balance: 0,
     blending: 50,
   },
@@ -77,6 +81,7 @@ export default function Index() {
   // Export state
   const [selectedVariants, setSelectedVariants] = useState<string[]>(['rec709_clean']);
   const [isExporting, setIsExporting] = useState(false);
+  const [showXMPAnalysis, setShowXMPAnalysis] = useState(false);
 
   // Handle settings change from the adjustments panel
   const handleSettingsChange = useCallback((newSettings: XMPColorSettings) => {
@@ -176,6 +181,32 @@ export default function Index() {
     setReferenceImage(null);
   }, []);
 
+  // Reset settings to original XMP values
+  const handleResetToXMP = useCallback(async () => {
+    if (!activePreset) return;
+    try {
+      const settings = await parseXMPFile(activePreset.file);
+      setActivePreset({
+        ...activePreset,
+        settings,
+      });
+      toast.success('Einstellungen auf XMP-Werte zurückgesetzt');
+    } catch (error) {
+      console.error('Failed to reset to XMP values:', error);
+      toast.error('Konnte XMP-Werte nicht neu laden');
+    }
+  }, [activePreset]);
+
+  // Reset settings to neutral/default values
+  const handleResetToDefault = useCallback(() => {
+    if (!activePreset) return;
+    setActivePreset({
+      ...activePreset,
+      settings: defaultSettings,
+    });
+    toast.success('Einstellungen auf Default-Werte zurückgesetzt');
+  }, [activePreset]);
+
   // Handle export
   const handleExport = useCallback(async () => {
     if (!activePreset || selectedVariants.length === 0) return;
@@ -236,6 +267,7 @@ export default function Index() {
           activePreset={activePreset}
           onExport={handleExport}
           isExporting={isExporting}
+          onOpenAnalysis={() => setShowXMPAnalysis(true)}
         />
         
         {/* Main Preview Area */}
@@ -244,6 +276,11 @@ export default function Index() {
             image={referenceImage}
             preset={activePreset}
           />
+          <XMPAnalysisModal
+            preset={activePreset}
+            open={showXMPAnalysis}
+            onClose={() => setShowXMPAnalysis(false)}
+          />
         </main>
 
         {/* Right Panel - Adjustments */}
@@ -251,6 +288,8 @@ export default function Index() {
           settings={activePreset?.settings ?? null}
           onChange={handleSettingsChange}
           presetName={activePreset?.name}
+          onResetXMP={handleResetToXMP}
+          onResetDefault={handleResetToDefault}
         />
       </div>
     </div>

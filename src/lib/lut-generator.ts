@@ -36,10 +36,13 @@ const defaultSettings: XMPColorSettings = {
   splitToning: {
     shadowHue: 0,
     shadowSaturation: 0,
+    shadowLuminance: 0,
     midtoneHue: 0,
     midtoneSaturation: 0,
+    midtoneLuminance: 0,
     highlightHue: 0,
     highlightSaturation: 0,
+    highlightLuminance: 0,
     balance: 0,
     blending: 50,
   },
